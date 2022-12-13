@@ -1,3 +1,9 @@
+# przedstawić klasyfikację, nie generację
+# sygnały ekg (szeregi czasowe)
+# detekcja cech
+# sieci splotowe
+
+
 from data_prep import loader
 
 import math
@@ -17,9 +23,37 @@ Conv = nn.Conv1d
 
 def main():
 	train_dl, _ = loader(batch_size=50)
-	model = Shallow_NN([1,8,16,32,64,128,256])	
+#	model = Shallow_NN([1,8,16,32,64,128,256])	
+
+	blocks_1 = nn.ModuleList([
+		BasicBlock(1,8,2),
+		BasicBlock(8,8)])
+
+	blocks_2 = nn.ModuleList([
+		BasicBlock(16,16),
+		BasicBlock(16,16),
+		BasicBlock(16,16),
+		BasicBlock(16,16)])
+
+	aggr_nodes = nn.ModuleList([
+		Aggr_block(16,16, kernel_size=1, residual=False),# sekcja/drzewo 1
+		Aggr_block(32,16, kernel_size=1, residual=False),# sekcja/drzewo 2
+		Aggr_block(64,32, kernel_size=1, residual=True)])
+
+
 	for rec, lab in train_dl:
-		model(rec)
+		b1 = blocks_1[0](rec)
+		b2 = blocks_1[1](b1)
+		a1 = aggr_nodes[0](b1,b2)
+
+		b3 = blocks_2[0](a1)
+		b4 = blocks_2[1](b3)
+		a2 = aggr_nodes[1](b3,b4)
+		b5 = blocks_2[2](a2)
+		b6 = blocks_2[3](b5)
+		a3 = aggr_nodes[2](a1,a2,b5,b6)
+		
+#		model(rec)
 		break
 
 
@@ -86,17 +120,18 @@ class Aggr_block(nn.Module):
 		self.residual = residual
 
 	def forward(self, *x):
-		children = x
-		# cat(x,0) -> łączymy końcami tensory 1d i przeprowadzamy konwolucję 1d na takim tensorze
-		# cat(x,1) -> tensory 1d łączymy w tensor 2d wtedy musimy przeprowadzić konwolucję 2d
-		# x = self.conv(torch.cat(x, 1))
-		x = self.conv(torch.cat(x, 0))
+#		children = x
+		x = self.conv(torch.cat(x, 1))
 		x = self.bn(x)
 
-		# Przy konwolucji może dojść do podwojenia liczby kanałów
-		# children ma dwa razy mniej kanałów. Co z tym zrobić, żeby to dodać?
-		if self.residual:
-			x += children[0]
+#		projekcja
+#		if self.residual:
+#			for i in children:
+#				print(i.shape)
+#				break
+#			print(x.shape)
+#			nn.Conv2d(in_channels, out_channels,kernel_size=1, stride=1, bias=False)
+#			x += children[0]
 		x = self.relu(x)
 
 		return x
@@ -212,9 +247,9 @@ class Shallow_NN(nn.Module):
 
 	def forward(self, x):
 		
-		x = self.base_layer(x)
-		x = self.conv_layer_1(x)
-		x = self.conv_layer_2(x)
+		#x = self.base_layer(x)
+		#x = self.conv_layer_1(x)
+		#x = self.conv_layer_2(x)
 
 		# sekcja/drzewo 1
 		b1_1 = self.blocks_1[0](x)
@@ -231,31 +266,31 @@ class Shallow_NN(nn.Module):
 		print("a1 size =", a1_.size(), "a2.1 size =", a2_1.size(), "b2.3, b2.4 size =", b2_3.size(), b2_4.size())
 #        print(torch.cat((b2_1,b2_2),0).size())
 #        print("Agregacja 3")
-		a2_2 = self.aggr_nodes[2](a1_,a2_1,b2_3,b2_4)
+#		a2_2 = self.aggr_nodes[2](a1_,a2_1,b2_3,b2_4)
 		#The size of tensor a (128) must match the size of tensor b (64) at non-singleton dimension 1
 #        print("Agregacja 3")
 		
-		# sekcja/drzewo 3
-		b3_1 = self.blocks_3[0](a2_2)
-		b3_2 = self.blocks_3[1](b3_1)
-		a3_1 = self.aggr_nodes[3](b3_1,b3_2)
-
-		b3_3 = self.blocks_3[2](a3_1)
-		b3_4 = self.blocks_3[3](b3_3)
-		a3_2 = self.aggr_nodes[4](a3_1,b3_3,b3_4)
-
-		b3_5 = self.blocks_3[4](a3_2)
-		b3_6 = self.blocks_3[5](b3_5)
-		a3_3 = self.aggr_nodes[5](b3_5,b3_6)
-
-		b3_7 = self.blocks_3[6](a3_3)
-		b3_8 = self.blocks_3[7](b3_7)
-		a3_4 = self.aggr_nodes[6](a2_2,a3_2,a3_3,b3_7,b3_8)
-
-		# sekcja/drzewo 4
-		b4_1 = self.blocks_4[0](a3_4)
-		b4_2 = self.blocks_4[1](b4_1)
-		out = self.aggr_nodes[0](a3_4,b4_1,b4_2)
+#		# sekcja/drzewo 3
+#		b3_1 = self.blocks_3[0](a2_2)
+#		b3_2 = self.blocks_3[1](b3_1)
+#		a3_1 = self.aggr_nodes[3](b3_1,b3_2)
+#
+#		b3_3 = self.blocks_3[2](a3_1)
+#		b3_4 = self.blocks_3[3](b3_3)
+#		a3_2 = self.aggr_nodes[4](a3_1,b3_3,b3_4)
+#
+#		b3_5 = self.blocks_3[4](a3_2)
+#		b3_6 = self.blocks_3[5](b3_5)
+#		a3_3 = self.aggr_nodes[5](b3_5,b3_6)
+#
+#		b3_7 = self.blocks_3[6](a3_3)
+#		b3_8 = self.blocks_3[7](b3_7)
+#		a3_4 = self.aggr_nodes[6](a2_2,a3_2,a3_3,b3_7,b3_8)
+#
+#		# sekcja/drzewo 4
+#		b4_1 = self.blocks_4[0](a3_4)
+#		b4_2 = self.blocks_4[1](b4_1)
+#		out = self.aggr_nodes[0](a3_4,b4_1,b4_2)
 
 		out = self.avgpool(out)
 		out = self.conv_final(out)
