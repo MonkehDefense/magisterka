@@ -30,13 +30,13 @@ def main():
 		BasicBlock(8,8)])
 
 	blocks_2 = nn.ModuleList([
-		BasicBlock(16,16),
+		BasicBlock(8,16),
 		BasicBlock(16,16),
 		BasicBlock(16,16),
 		BasicBlock(16,16)])
 
 	aggr_nodes = nn.ModuleList([
-		Aggr_block(16,16, kernel_size=1, residual=False),# sekcja/drzewo 1
+		Aggr_block(16,8, kernel_size=1, residual=False),# sekcja/drzewo 1
 		Aggr_block(32,16, kernel_size=1, residual=False),# sekcja/drzewo 2
 		Aggr_block(64,32, kernel_size=1, residual=True)])
 
@@ -135,6 +135,28 @@ class Aggr_block(nn.Module):
 		x = self.relu(x)
 
 		return x
+
+
+
+
+
+class DLA_stage(nn.Module):
+	def __init__(self, tree_height, block, in_channels, out_channels, stride = 1, dilation = 1, aggr_in = 0):
+		super().__init__()
+
+		aggr_in = 2 * out_channels if aggr_in == 0 else aggr_in
+
+		if(tree_height == 1):
+			self.left = block(in_channels, out_channels, stride, dilation)
+			self.right = block(out_channels, out_channels, stride, dilation)
+			self.aggr_node = Aggr_block(out_channels,out_channels)
+		else:
+			self.left = DLA_stage(tree_height-1, block, in_channels, out_channels)
+			self.right = DLA_stage(tree_height-1, block, out_channels, out_channels)
+
+
+
+
 
 
 

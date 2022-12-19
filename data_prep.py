@@ -6,7 +6,7 @@ import os
 from numpy.lib.arraysetops import unique
 import numpy as np
 import matplotlib
-import gc
+#import gc
 #import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import TensorDataset, DataLoader
