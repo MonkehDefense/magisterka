@@ -9,7 +9,7 @@ from data_prep import loader
 import math
 
 import torch
-import torchvision
+# import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 #import gc
@@ -31,6 +31,7 @@ def main():
 
 		print('\nalleluja!\n')
 		break
+
 	# blocks_1 = nn.ModuleList([
 	# 	BasicBlock(1,8,2),
 	# 	BasicBlock(8,8)])
@@ -178,8 +179,6 @@ class DLA_stage(nn.Module):
 			self.projection = nn.Sequential(
 				Conv(in_channels, out_channels, 1, bias = False),
 				BatchNorm(out_channels))
-
-   
    
    
    
