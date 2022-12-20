@@ -259,19 +259,6 @@ class Shallow_NN(nn.Module):
 			Aggr_block(channels[5],channels[6], kernel_size=1, residual=True),
 			Aggr_block(channels[6],num_classes, kernel_size=1, residual=True)])# sekcja/drzewo 4
 
-#        self.b1 = block(channels[2],channels[3])
-#        self.b2 = block(channels[3],channels[3])
-#        self.b3 = block(channels[3],channels[3])
-#        self.b4 = block(channels[3],channels[3])
-#        self.b5 = block(channels[3],channels[3])
-#        self.b6 = block(channels[3],channels[3])
-#        self.b7 = block(channels[3],channels[3])
-#        self.b8 = block(channels[3],channels[3])
-#
-#        self.a1 = Aggr_block(channels[3],channels[3], kernel_size=1, residual=False)
-#        self.a2 = Aggr_block(channels[3],channels[3], kernel_size=1, residual=False)
-#        self.a3 = Aggr_block(channels[3],channels[3], kernel_size=1, residual=False)
-#        self.a4 = Aggr_block(channels[3],channels[4], kernel_size=1, residual=False)
 
 		self.avgpool = nn.AvgPool1d(pool_size)
 		self.conv_final = Conv(channels[4], num_classes, kernel_size=1,
@@ -297,17 +284,6 @@ class Shallow_NN(nn.Module):
 			inplanes = planes
 		return nn.Sequential(*modules)
 
-#    def _make_block_chain(self, inplanes, planes, blocks, stride=1, dilation=1):
-#        modules = []
-#        for i in range(blocks):
-#            modules.extend([
-#                Conv(inplanes, planes, kernel_size=3,
-#                          stride=stride if i == 0 else 1,
-#                          padding=dilation, bias=False, dilation=dilation),
-#                BatchNorm(planes),
-#                nn.ReLU(inplace=True)])
-#            inplanes = planes
-#        return nn.Sequential(*modules)
 
 	def forward(self, x):
 		
