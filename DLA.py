@@ -23,38 +23,60 @@ Conv = nn.Conv1d
 
 def main():
 	train_dl, _ = loader(batch_size=50)
-#	model = Shallow_NN([1,8,16,32,64,128,256])	
 
-	blocks_1 = nn.ModuleList([
-		BasicBlock(1,8,2),
-		BasicBlock(8,8)])
-
-	blocks_2 = nn.ModuleList([
-		BasicBlock(8,16),
-		BasicBlock(16,16),
-		BasicBlock(16,16),
-		BasicBlock(16,16)])
-
-	aggr_nodes = nn.ModuleList([
-		Aggr_block(16,8, kernel_size=1, residual=False),# sekcja/drzewo 1
-		Aggr_block(32,16, kernel_size=1, residual=False),# sekcja/drzewo 2
-		Aggr_block(64,32, kernel_size=1, residual=True)])
-
+	model = DLA_manual()
 
 	for rec, lab in train_dl:
-		b1 = blocks_1[0](rec)
-		b2 = blocks_1[1](b1)
-		a1 = aggr_nodes[0](b1,b2)
+		model(rec)
 
-		b3 = blocks_2[0](a1)
-		b4 = blocks_2[1](b3)
-		a2 = aggr_nodes[1](b3,b4)
-		b5 = blocks_2[2](a2)
-		b6 = blocks_2[3](b5)
-		a3 = aggr_nodes[2](a1,a2,b5,b6)
-		
-#		model(rec)
+		print('\nalleluja!\n')
 		break
+	# blocks_1 = nn.ModuleList([
+	# 	BasicBlock(1,8,2),
+	# 	BasicBlock(8,8)])
+
+	# blocks_2 = nn.ModuleList([
+	# 	BasicBlock(8,16,2),
+	# 	BasicBlock(16,16),
+	# 	BasicBlock(16,16),
+	# 	BasicBlock(16,16)])
+
+
+	# aggr = Aggr_block(16,8, kernel_size=1, residual=False)# sekcja/drzewo 1
+	
+	# aggr_2 = nn.ModuleList([
+	# 	Aggr_block(32,16, kernel_size=1, residual=False),# sekcja/drzewo 2
+	# 	Aggr_block(8+3*16,16, kernel_size=1, residual=False)])
+ 
+ 
+	
+	# downsample = nn.MaxPool1d(1,2)
+	# projection = Conv(1,8,1)
+	# projection2 = Conv(8,16,1)
+ 
+	# for rec, lab in train_dl:
+	# 	b1 = blocks_1[0](rec, projection(downsample(rec)))
+	# 	b2 = blocks_1[1](b1)
+	# 	a1 = aggr(b1,b2)
+		
+	# 	# print('projekcja jest ok')
+	# 	down = downsample(a1)
+	# 	# print(res.shape)
+	# 	res = projection2(down)
+		
+
+	# 	print(a1.shape)
+	# 	# print(res.shape)
+	# 	b3 = blocks_2[0](a1, res)
+	# 	b4 = blocks_2[1](b3)
+	# 	a2 = aggr_2[0](b3,b4)
+	# 	b5 = blocks_2[2](a2)
+	# 	b6 = blocks_2[3](b5)
+
+	# 	# print(b6.shape)
+	# 	a3 = aggr_2[1](down,a2,b5,b6)
+		
+	# 	break
 
 
 class BasicBlock(nn.Module):
@@ -75,13 +97,11 @@ class BasicBlock(nn.Module):
 							stride=1, padding=dilation,
 							bias=False, dilation=dilation)
 		self.bn2 = BatchNorm(out_channels)
-		self.stride = stride
-
-		self.downsample = nn.MaxPool1d(stride)
-		self.projection = Conv(in_channels,out_channels,1)
+		
 
 
-	def forward(self, x):
+	def forward(self, x, residual = None):
+		residual = x if residual is None else residual
 
 		out = self.conv1(x)
 		out = self.bn1(out)
@@ -90,13 +110,6 @@ class BasicBlock(nn.Module):
 		out = self.conv2(out)
 		out = self.bn2(out)
 
-		if self.stride > 1:
-			residual = self.downsample(x)
-		else:
-			residual = x
-
-		if self.in_channels != self.out_channels:
-			residual = self.projection(residual)
 
 		out += residual
 		out = self.relu(out)
@@ -141,20 +154,49 @@ class Aggr_block(nn.Module):
 
 
 class DLA_stage(nn.Module):
-	def __init__(self, tree_height, block, in_channels, out_channels, stride = 1, dilation = 1, aggr_in = 0):
+	def __init__(self, tree_height, block, in_channels, out_channels, stride = 1, aggr_in = 0, end = True):
 		super().__init__()
 
+		self.end = end
+		self.height = tree_height
+
+		# czemu in_channels?
 		aggr_in = 2 * out_channels if aggr_in == 0 else aggr_in
+		aggr_in = aggr_in + in_channels if end else aggr_in
 
 		if(tree_height == 1):
-			self.left = block(in_channels, out_channels, stride, dilation)
-			self.right = block(out_channels, out_channels, stride, dilation)
-			self.aggr_node = Aggr_block(out_channels,out_channels)
+			self.left = block(in_channels, out_channels, stride)
+			self.right = block(out_channels, out_channels)
+			self.aggr_node = Aggr_block(aggr_in,out_channels)
 		else:
-			self.left = DLA_stage(tree_height-1, block, in_channels, out_channels)
-			self.right = DLA_stage(tree_height-1, block, out_channels, out_channels)
+			self.left = DLA_stage(tree_height-1, block, in_channels, out_channels, aggr_in = 0, end=False)
+			self.right = DLA_stage(tree_height-1, block, out_channels, out_channels, aggr_in = aggr_in + out_channels, end=False)
 
+		if stride > 1:
+			self.downsample = nn.MaxPool1d(1, stride)
+		if in_channels != out_channels:
+			self.projection = nn.Sequential(
+				Conv(in_channels, out_channels, 1, bias = False),
+				BatchNorm(out_channels))
 
+   
+   
+   
+   
+	def forward(self, x, children = None):
+		children = [] if children is None else children
+		down = self.downsample(x) if self.downsample else x
+		residual = self.projection(down) if self.projection else down
+		if self.end:
+			children.append(down)
+		x1 = self.left(x, residual)
+		if self.height == 1:
+			x2 = self.right(x1)
+			x = self.aggr_node(x2, x1, *children)
+		else:
+			children.append(x1)
+			x = self.right(x1, children)
+		return x
 
 
 
@@ -318,6 +360,69 @@ class Shallow_NN(nn.Module):
 		out = self.conv_final(out)
 		out = out.view(out.size(0), -1)
 
+		return out
+
+
+class DLA_manual(nn.Module):
+	def __init__(self, chan = [1,8,16,32,64,128], block = BasicBlock) -> None:
+		super().__init__()  
+		
+		self.base_layer = nn.Sequential(
+			Conv(chan[0], chan[1], kernel_size=7, stride=1,
+					  padding=3, bias=False),
+			BatchNorm(chan[1]),
+			nn.ReLU(inplace=True))
+
+		self.blocks_1 = nn.ModuleList([
+			block(chan[1],chan[2],2),
+			block(chan[2],chan[2])])
+
+		self.blocks_2 = nn.ModuleList([
+			block(chan[2],chan[3],2),
+			block(chan[3],chan[3]),
+			block(chan[3],chan[3]),
+			block(chan[3],chan[3])])
+
+
+		self.aggr_1 = Aggr_block(2*chan[2],chan[2], kernel_size=1, residual=False)# sekcja/drzewo 1
+
+		self.aggr_2 = nn.ModuleList([
+			Aggr_block(2*chan[3],chan[3], kernel_size=1, residual=False),# sekcja/drzewo 2
+			Aggr_block(chan[2]+3*chan[3],chan[3], kernel_size=1, residual=False)])
+
+		self.downsample = nn.MaxPool1d(1,2)
+		self.projection1 = Conv(8,16,1)
+		self.projection2 = Conv(16,32,1)
+
+
+	def forward(self, x):
+		x = self.base_layer(x)
+
+		res = self.projection1(self.downsample(x))
+		b1 = self.blocks_1[0](x, res)
+		b2 = self.blocks_1[1](b1)
+		a1 = self.aggr_1(b1,b2)
+		
+		# print('projekcja jest ok')
+		down = self.downsample(a1)
+		# print(res.shape)
+		res = self.projection2(down)
+		
+
+		print(a1.shape)
+		# print(res.shape)
+		b3 = self.blocks_2[0](a1, res)
+		b4 = self.blocks_2[1](b3)
+		a2 = self.aggr_2[0](b3,b4)
+		b5 = self.blocks_2[2](a2)
+		b6 = self.blocks_2[3](b5)
+
+		# print(b6.shape)
+		a3 = self.aggr_2[1](down,a2,b5,b6)
+
+
+
+		out = a3
 		return out
 
 
