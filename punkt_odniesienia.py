@@ -178,6 +178,7 @@ class Tree(nn.Module):
             self.tree2 = block(out_channels, out_channels, 1,
                                dilation=dilation)
         else:
+            # czemu root_residual = root_residual? Jeśli ma to być głęboka agregacja, to powinna to być prawda tylko dla ostatniego roota.
             self.tree1 = Tree(levels - 1, block, in_channels, out_channels,
                               stride, root_dim=0,
                               root_kernel_size=root_kernel_size,
@@ -204,6 +205,10 @@ class Tree(nn.Module):
             )
 
     def forward(self, x, residual=None, children=None):
+        # residual określany i przekazywany jedynie właściwym blokom,
+        # w drzewach jest nadpisywany i nie użyty do nieczego
+        
+        # children przekazywane jedynie prrawemu drzewku -
         children = [] if children is None else children
         bottom = self.downsample(x) if self.downsample else x
         residual = self.project(bottom) if self.project else bottom
@@ -212,6 +217,7 @@ class Tree(nn.Module):
         x1 = self.tree1(x, residual)
         if self.levels == 1:
             x2 = self.tree2(x1)
+            # Skoro root miałby wyróżniać pierwszy element, to czemu przekazywany jest jako pierwszy x2?
             x = self.root(x2, x1, *children)
         else:
             children.append(x1)
