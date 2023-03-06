@@ -419,3 +419,136 @@ def dla169(pretrained=None, **kwargs):  # DLA-169
     if pretrained is not None:
         model.load_pretrained_model(pretrained, 'dla169')
     return model
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def run_training(args):
+    model = dla.__dict__[args.arch](
+        pretrained=args.pretrained, num_classes=args.classes,
+        pool_size=args.crop_size // 32)
+    model = torch.nn.DataParallel(model)
+
+    best_prec1 = 0
+
+    # optionally resume from a checkpoint
+    if args.resume:
+        if os.path.isfile(args.resume):
+            print("=> loading checkpoint '{}'".format(args.resume))
+            checkpoint = torch.load(args.resume)
+            args.start_epoch = checkpoint['epoch']
+            best_prec1 = checkpoint['best_prec1']
+            model.load_state_dict(checkpoint['state_dict'])
+            print("=> loaded checkpoint '{}' (epoch {})"
+                  .format(args.resume, checkpoint['epoch']))
+        else:
+            print("=> no checkpoint found at '{}'".format(args.resume))
+
+    cudnn.benchmark = True
+
+    data = dataset.get_data(args.data_name)
+    if data is None:
+        data = dataset.load_dataset_info(args.data, data_name=args.data_name)
+    if data is None:
+        raise ValueError('{} is not pre-defined in dataset.py and info.json '
+                         'does not exist in {}', args.data_name, args.data)
+
+    # Data loading code
+    traindir = os.path.join(args.data, 'train')
+    valdir = os.path.join(args.data, 'val')
+    normalize = data_transforms.Normalize(mean=data.mean, std=data.std)
+    tt = [data_transforms.RandomResizedCrop(
+        args.crop_size, min_area_ratio=args.min_area_ratio,
+        aspect_ratio=args.aspect_ratio)]
+    if data.eigval is not None and data.eigvec is not None \
+            and args.random_color:
+        ligiting = data_transforms.Lighting(0.1, data.eigval, data.eigvec)
+        jitter = data_transforms.RandomJitter(0.4, 0.4, 0.4)
+        tt.extend([jitter, ligiting])
+    tt.extend([data_transforms.RandomHorizontalFlip(),
+               data_transforms.ToTensor(),
+               normalize])
+
+    train_loader = torch.utils.data.DataLoader(
+        datasets.ImageFolder(traindir, data_transforms.Compose(tt)),
+        batch_size=args.batch_size, shuffle=True,
+        num_workers=args.workers, pin_memory=True)
+
+    val_loader = torch.utils.data.DataLoader(
+        datasets.ImageFolder(valdir, transforms.Compose([
+            transforms.Resize(args.scale_size),
+            transforms.CenterCrop(args.crop_size),
+            transforms.ToTensor(),
+            normalize
+        ])),
+        batch_size=args.batch_size, shuffle=False,
+        num_workers=args.workers, pin_memory=True)
+
+    # define loss function (criterion) and pptimizer
+    criterion = nn.CrossEntropyLoss()
+
+    optimizer = torch.optim.SGD(model.parameters(), args.lr,
+                                momentum=args.momentum,
+                                weight_decay=args.weight_decay)
+
+    if args.cuda:
+        model = model.cuda()
+        criterion = criterion.cuda()
+
+    if args.evaluate:
+        validate(args, val_loader, model, criterion)
+        return
+
+    for epoch in range(args.start_epoch, args.epochs):
+        adjust_learning_rate(args, optimizer, epoch)
+
+        # train for one epoch
+        train(args, train_loader, model, criterion, optimizer, epoch)
+
+        # evaluate on validation set
+        prec1 = validate(args, val_loader, model, criterion)
+
+        # remember best prec@1 and save checkpoint
+        is_best = prec1 > best_prec1
+        best_prec1 = max(prec1, best_prec1)
+        checkpoint_path = 'checkpoint_latest.pth.tar'
+        save_checkpoint({
+            'epoch': epoch + 1,
+            'arch': args.arch,
+            'state_dict': model.state_dict(),
+            'best_prec1': best_prec1,
+        }, is_best, filename=checkpoint_path)
+        if (epoch + 1) % args.check_freq == 0:
+            history_path = 'checkpoint_{:03d}.pth.tar'.format(epoch + 1)
+            shutil.copyfile(checkpoint_path, history_path)
+
+

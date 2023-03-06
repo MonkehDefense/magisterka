@@ -1,9 +1,3 @@
-# przedstawić klasyfikację, nie generację
-# sygnały ekg (szeregi czasowe)
-# detekcja cech
-# sieci splotowe
-
-
 from data_prep import loader
 
 import math
