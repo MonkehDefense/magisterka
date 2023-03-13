@@ -96,15 +96,15 @@ def loader(train_dir = 'training2017', batch_size = 100, split_point = .2, seed 
 	rec_mean = torch.mean(records, dim = 2, keepdim = True)
 	rec_sd = torch.std(records, dim = 2, keepdim = True)
 
-	records = (records - rec_mean)/rec_sd
-	# print(records[0])
-
-
 	# print(rec_mean.shape)
 	# print(rec_sd.shape)
 	# print(records[0])
 	# print(rec_mean[0])
 	# print((records - rec_mean.unsqueeze(1))[0])
+
+	records = (records - rec_mean)/rec_sd
+	# print(records[0])
+
 
 
 	# Datasety

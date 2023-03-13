@@ -33,36 +33,33 @@ def main():
 
 
 
-	# model = nn.Sequential(
-	# 	nn.Conv1d(1,8,3, padding = 1),
-	# 	nn.MaxPool1d(2),
-	# 	nn.ReLU(),
-	# 	nn.Conv1d(8,16,3, padding = 1),
-	# 	nn.MaxPool1d(2),
-	# 	nn.ReLU(),
-	# 	nn.Conv1d(16,32,3, padding = 1),
-	# 	nn.MaxPool1d(2),
-	# 	nn.ReLU(),
-	# 	nn.Conv1d(32,64,3, padding = 1),
-	# 	nn.MaxPool1d(2),
-	# 	nn.ReLU(),
-	# 	nn.Conv1d(64,128,3, padding = 1),
-	# 	nn.MaxPool1d(2),
-	# 	nn.ReLU(),
-	# 	nn.Conv1d(128,256,3, padding = 1),
-	# 	nn.MaxPool1d(2),
-	# 	nn.ReLU(),
-	# 	nn.Flatten(),
-	# 	nn.Linear(32*256, 256),
-	# 	nn.ReLU(),
-	# 	nn.Linear(256,4)
-	# )
+	model = nn.Sequential(
+		nn.Conv1d(1,8,3, padding = 1),
+		nn.MaxPool1d(2),
+		nn.ReLU(),
+		nn.Conv1d(8,16,3, padding = 1),
+		nn.MaxPool1d(2),
+		nn.ReLU(),
+		nn.Conv1d(16,32,3, padding = 1),
+		nn.MaxPool1d(2),
+		nn.ReLU(),
+		nn.Conv1d(32,64,3, padding = 1),
+		nn.MaxPool1d(2),
+		nn.ReLU(),
+		nn.Conv1d(64,128,3, padding = 1),
+		nn.MaxPool1d(2),
+		nn.ReLU(),
+		nn.Conv1d(128,256,3, padding = 1),
+		nn.MaxPool1d(2),
+		nn.ReLU(),
+		nn.Flatten(),
+		nn.Linear(32*256, 256),
+		nn.ReLU(),
+		nn.Linear(256,4)
+	).to(device)
 
 
-
-
-	model = DLA.DLA_manual()
-	model = to_device(model, device)
+	# model = DLA.DLA_manual().to(device)
 
  
 	# optimizer = torch.optim.SGD(model.parameters(),
@@ -79,8 +76,6 @@ def main():
 
 	# print(losses)
 	# print(accuracies)
-
-
 
 	# p = plt.plot(losses)
 	# plt.show(p)
