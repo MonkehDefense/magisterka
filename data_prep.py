@@ -96,7 +96,7 @@ def loader(train_dir = 'training2017', batch_size = 100, split_point = .2, seed 
 	rec_mean = torch.mean(records, dim = 2, keepdim = True)
 	rec_sd = torch.std(records, dim = 2, keepdim = True)
 
-	records = (records - rec_mean.unsqueeze(1))/rec_sd.unsqueeze(1)
+	records = (records - rec_mean)/rec_sd
 	# print(records[0])
 
 

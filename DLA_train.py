@@ -13,8 +13,8 @@ import torch.nn as nn
 
 def main():
 	lr = .001
-	momentum = .25
-	weight_decay = 0
+	# momentum = .25
+	# weight_decay = 0
 
 	batch_size=128
 	loss_fn = nn.CrossEntropyLoss()
