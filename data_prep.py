@@ -41,7 +41,7 @@ def main():
 
 
 
-def loader(train_dir = 'training2017', batch_size = 100, split_point = .2, seed = None):
+def loader(train_dir = 'training2017', batch_size = 100, split_point = .8, seed = None):
 	records = []
 	labels = []
 	recId2LabId = dict()
@@ -108,19 +108,16 @@ def loader(train_dir = 'training2017', batch_size = 100, split_point = .2, seed 
 
 
 	# Datasety
-	train_ds = TensorDataset(records, labels)
+	ds = TensorDataset(records, labels)
 
-	split_point = int(split_point*len(train_ds))
+	split_point = int(split_point*len(ds))
 	if seed is not None:
 		train_ds, valid_ds = random_split(
-			train_ds,
-			[split_point, len(train_ds) - split_point],
+			ds,
+			[split_point, len(ds) - split_point],
 			torch.Generator().manual_seed(seed))
 	else:
-		train_ds, valid_ds = random_split(
-			train_ds,
-			[split_point, len(train_ds) - split_point],
-			torch.Generator())
+		train_ds, valid_ds = random_split(ds,[split_point, len(ds) - split_point])
 
 	# DataLoadery
 	train_dl = DataLoader(train_ds, batch_size, shuffle = True)
