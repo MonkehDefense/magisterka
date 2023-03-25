@@ -18,14 +18,89 @@ Conv = nn.Conv1d
 def main():
 	train_dl, valid_dl,_ = loader(batch_size=50)
 
-	model = DLA_manual()
+	# model = DLA_manual()
+
+	# print(count_parameters(model))
+	# 3 116 124
+
+	model = SimpleResNet()
+
+	print(count_parameters(model))
+	# 2801156
 
 	for rec, lab in train_dl:
+		print(rec.shape)
 		result = model(rec)
 
 		# print('\nalleluja!\n')
-		# print(result.shape)
+		print(result.shape)
+
+
 		break
+
+
+
+
+def count_parameters(model):
+	return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+class ResidualDownBlock(nn.Module):
+	"""
+	Downsampling convolutional block with residual connection.
+	(N, C, W, H) -> (N, 2*C, W/2, H/2)
+	"""
+
+	def __init__(self, in_channels):
+		super(ResidualDownBlock, self).__init__()
+		self.seq = nn.Sequential(
+			Conv(in_channels, 2*in_channels,
+					  kernel_size=3, padding=1, bias=False),    # (N x C x W x H) -> (N x 2C x W x H)
+			BatchNorm(2*in_channels),
+			nn.ReLU(),
+			Conv(2*in_channels, 2*in_channels,
+					  kernel_size=3, stride=2, padding=1, bias=False),  # (N x 2C x W x H) -> (N x 2C x W/2 x H/2)
+			BatchNorm(2*in_channels),
+		)
+		self.relu = nn.ReLU()
+
+		self.identity_downsample = nn.Sequential(
+			# downsample (N x C x W x H) -> (N x C x W/2 x H/2)
+			nn.MaxPool1d(2),
+			# projection (N x C x W x H/2) -> (N x 2C x W/2 x H/2)
+			Conv(in_channels, 2*in_channels, 1)
+		)
+
+	def forward(self, x):
+		I = self.identity_downsample(x)
+		x = self.seq(x)
+		x += I
+		x = self.relu(x)
+		return x
+
+
+class SimpleResNet(nn.Module):
+	def __init__(self) -> None:
+		super().__init__()
+
+		self.seq = nn.Sequential(
+		Conv(1, 8, kernel_size=1, stride=1, padding=0),
+		ResidualDownBlock(8),
+		ResidualDownBlock(16),
+		ResidualDownBlock(32),
+		ResidualDownBlock(64),
+		ResidualDownBlock(128),
+		ResidualDownBlock(256),
+		nn.Flatten(),
+		nn.Linear(512 * 32, 64),
+		nn.ReLU(),
+		nn.Linear(64, 4)
+	)
+
+	def forward(self,x):
+		return self.seq(x)
+
+
 
 
 

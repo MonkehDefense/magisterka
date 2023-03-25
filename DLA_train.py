@@ -53,6 +53,7 @@ def main():
 
 
 	model = DLA.DLA_manual().to(device)
+	# model = DLA.SimpleResNet().to(device)
 
 
 	# optimizer = torch.optim.SGD(model.parameters(),
