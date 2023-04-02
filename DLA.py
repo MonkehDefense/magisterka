@@ -23,10 +23,21 @@ def main():
 	# print(count_parameters(model))
 	# 3 116 124
 
-	model = SimpleResNet()
+	# model = SimpleResNet()
 
-	print(count_parameters(model))
+	# print(count_parameters(model))
 	# 2801156
+
+
+	# model = SimpleSeq()
+	# print(count_parameters(model))
+	# 2229908
+
+
+
+	model = ResNet18(1)
+	# print(count_parameters(model))
+	# 3845956
 
 	for rec, lab in train_dl:
 		print(rec.shape)
@@ -46,11 +57,6 @@ def count_parameters(model):
 
 
 class ResidualDownBlock(nn.Module):
-	"""
-	Downsampling convolutional block with residual connection.
-	(N, C, W, H) -> (N, 2*C, W/2, H/2)
-	"""
-
 	def __init__(self, in_channels):
 		super(ResidualDownBlock, self).__init__()
 		self.seq = nn.Sequential(
@@ -101,6 +107,179 @@ class SimpleResNet(nn.Module):
 		return self.seq(x)
 
 
+
+
+
+
+
+
+class ResNet18Block(nn.Module):
+
+
+	def __init__(self, in_channels, out_channels, stride = 1, expansion = 1, downsample = None):
+		super().__init__()
+
+		self.downsample = downsample
+		self.expansion = expansion
+
+		self.seq = nn.Sequential(
+			Conv(in_channels, out_channels,
+					  kernel_size=3, stride = stride, padding=1, bias=False),
+			BatchNorm(out_channels),
+			nn.ReLU(),
+			Conv(out_channels, out_channels*self.expansion,
+					  kernel_size=3, padding=1, bias=False),
+			BatchNorm(out_channels*self.expansion),
+		)
+		self.relu = nn.ReLU()
+
+
+		# self.identity_downsample = nn.Sequential(
+		# 	nn.MaxPool1d(2),
+		# 	Conv(in_channels, out_channels, 1)
+		# ) if in_channels != out_channels else Conv(in_channels, out_channels, 1)
+
+
+	def forward(self, x):
+		I = self.downsample(x) if self.downsample is not None else x
+		out = self.seq(x)
+		out += I
+		out = self.relu(out)
+		return out
+
+
+
+
+
+class ResNet18(nn.Module):
+	def __init__(self, in_channels = 1, num_layers = 18, num_classes = 4) -> None:
+		super().__init__()
+
+
+		if num_layers == 18:
+			layers = [2,2,2,2]
+			self.expansion = 1
+
+		# self.channels = 8
+		self.channels = 64
+
+		self.conv1 = Conv(
+			in_channels = in_channels,
+			out_channels = self.channels,
+			kernel_size= 7,
+			stride = 2,
+			padding = 3,
+			bias = False
+		)
+
+		self.bn = BatchNorm(self.channels)
+		self.relu = nn.ReLU(True)
+		self.maxpool = nn.MaxPool1d(kernel_size = 3, stride = 2, padding = 1)
+
+
+		# self.layer1 = self._make_layer(8, layers[0])
+		# self.layer2 = self._make_layer(16, layers[1], stride = 2)
+		# self.layer3 = self._make_layer(32, layers[2], stride = 2)
+		# self.layer4 = self._make_layer(64, layers[3], stride = 2)
+
+		
+		self.layer1 = self._make_layer(64, layers[0])
+		self.layer2 = self._make_layer(128, layers[1], stride = 2)
+		self.layer3 = self._make_layer(256, layers[2], stride = 2)
+		self.layer4 = self._make_layer(512, layers[3], stride = 2)
+
+
+		self.avgpool = nn.AdaptiveAvgPool1d(1)
+		# self.fc = nn.Linear(64*self.expansion, num_classes)
+		self.fc = nn.Linear(512*self.expansion, num_classes)
+
+
+
+
+
+	def _make_layer(self, out_channels, blocks, stride = 1):
+		downsample = None
+		if stride != 1:
+			downsample = nn.Sequential(
+				Conv(self.channels, out_channels, 1, stride, bias=False),
+				BatchNorm(out_channels),
+			)
+
+
+		layers = []
+		layers.append(ResNet18Block(self.channels, out_channels, stride, self.expansion, downsample))
+		self.channels = out_channels*self.expansion
+
+		for i in range(1, blocks):
+			layers.append(ResNet18Block(
+				self.channels,
+				out_channels,
+				expansion = self.expansion,
+				)
+			)
+
+		return nn.Sequential(*layers)
+
+
+
+
+
+	def forward(self,x):
+		x = self.conv1(x)
+		x = self.bn(x)
+		x = self.relu(x)
+		x = self.maxpool(x)
+
+		x = self.layer1(x)
+		x = self.layer2(x)
+		x = self.layer3(x)
+		x = self.layer4(x)
+
+		x = self.avgpool(x)
+		x = torch.flatten(x, 1)
+		x = self.fc(x)
+
+
+		return x
+
+
+
+
+
+
+
+
+
+class SimpleSeq(nn.Module):
+	def __init__(self) -> None:
+		super().__init__()
+		self.seq = nn.Sequential(
+		nn.Conv1d(1,8,3, padding = 1),
+		nn.MaxPool1d(2),
+		nn.ReLU(),
+		nn.Conv1d(8,16,3, padding = 1),
+		nn.MaxPool1d(2),
+		nn.ReLU(),
+		nn.Conv1d(16,32,3, padding = 1),
+		nn.MaxPool1d(2),
+		nn.ReLU(),
+		nn.Conv1d(32,64,3, padding = 1),
+		nn.MaxPool1d(2),
+		nn.ReLU(),
+		nn.Conv1d(64,128,3, padding = 1),
+		nn.MaxPool1d(2),
+		nn.ReLU(),
+		nn.Conv1d(128,256,3, padding = 1),
+		nn.MaxPool1d(2),
+		nn.ReLU(),
+		nn.Flatten(),
+		nn.Linear(32*256, 256),
+		nn.ReLU(),
+		nn.Linear(256,4)
+	)
+	
+	def forward(self,x):
+		return self.seq(x)
 
 
 
