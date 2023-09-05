@@ -9,7 +9,7 @@ import torch.nn as nn
 #import gc
 # from torch.utils.data import TensorDataset, DataLoader
 # import torchvision.transforms as tt
-from torch.utils.data import random_split
+# from torch.utils.data import random_split
 # import matplotlib.pyplot as plt
 
 BatchNorm = nn.BatchNorm1d
@@ -19,25 +19,23 @@ def main():
 	train_dl, valid_dl,_ = loader(batch_size=50)
 
 	# model = DLA_manual()
-
 	# print(count_parameters(model))
 	# 3 116 124
 
 	# model = SimpleResNet()
-
 	# print(count_parameters(model))
-	# 2801156
+	# 2 801 156
 
 
 	# model = SimpleSeq()
 	# print(count_parameters(model))
-	# 2229908
+	# 2 229 908
 
 
-
-	model = ResNet18(1)
+	model = ResNet18()
 	# print(count_parameters(model))
-	# 3845956
+	# 3 845 956
+
 
 	for rec, lab in train_dl:
 		print(rec.shape)
