@@ -16,9 +16,9 @@ from os.path import join
 
 
 def main():
-	lr = 1e-3
+	lr = 1e-2
 	epochs = 120
-	batch_size = 16	#128
+	batch_size = 64
 	loss_fn = nn.CrossEntropyLoss()
 	metric = cohen_kappa
 
@@ -54,7 +54,6 @@ def main():
 
 
 	cm = my_cm(VDL,model,4,device)
-	# print(cm)
 
 
 	with open(join('output data', f'{type(model).__name__} CM batch{batch_size} lr{lr:.3f} epoch{epochs}.txt'), 'w') as file:
@@ -64,8 +63,7 @@ def main():
 
 
 	fpr, tpr, roc_auc = my_roc_curve(VDL, model, 4, device)
-	plot_roc_curve(fpr, tpr, roc_auc, 4, ['rytm zatokowy', 'migotanie', 'arytmia', 'szum'], type(model).__name__)
-	# plot_roc_curve(fpr, tpr, roc_auc, 4, ['rytm zatokowy', 'migotanie', 'arytmia', 'szum'], 'DLA')
+	plot_roc_curve(fpr, tpr, roc_auc, 4, ['rytm zatokowy', 'migotanie', 'arytmia', 'szum'], type(model).__name__.replace('_manual',''))
 
 
 
@@ -122,7 +120,7 @@ def plot_roc_curve(fpr, tpr, roc_auc, classes, labels, model_name):
 				   ''.format(roc_auc["micro"]),
 			 color='deeppink', linestyle=':', linewidth=4)
 
-	colors = cycle(['aqua', 'darkorange', 'cornflowerblue', 'limegreen'])							#czwarty kolor
+	colors = cycle(['aqua', 'darkorange', 'cornflowerblue', 'limegreen'])
 	for i, color in zip(range(classes), colors):
 		plt.plot(fpr[i], tpr[i], color=color, lw=lw,
 				 label='{0} (AUC = {1:0.2f})'
