@@ -18,8 +18,8 @@ Conv = nn.Conv1d
 def main():
 	train_dl, valid_dl,_ = loader(batch_size=50)
 
-	# model = DLA_manual()
-	# print(count_parameters(model))
+	model = DLA_manual()
+	print(count_parameters(model))
 	# 3 116 124
 
 	# model = SimpleResNet()
@@ -32,7 +32,7 @@ def main():
 	# 2 229 908
 
 
-	model = ResNet18()
+	# model = ResNet18()
 	# print(count_parameters(model))
 	# 3 845 956
 
@@ -450,7 +450,7 @@ class DLA_manual(nn.Module):
 
 		self.aggr_5 = Aggr_block(2*chan[6] + chan[5],chan[6], kernel_size=1, residual=False)
 
-		self.downsample = nn.MaxPool1d(1,2)
+		self.downsample = nn.MaxPool1d(2,2)
 		self.projection1 = Conv(chan[1],chan[2],1)
 		self.projection2 = Conv(chan[2],chan[3],1)
 		self.projection3 = Conv(chan[3],chan[4],1)

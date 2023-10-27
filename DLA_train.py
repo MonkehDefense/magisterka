@@ -16,9 +16,9 @@ from os.path import join
 
 
 def main():
-	lr = 1e-2
+	lr = 1e-3
 	epochs = 120
-	batch_size = 64
+	batch_size = 128
 	loss_fn = nn.CrossEntropyLoss()
 	metric = cohen_kappa
 
@@ -114,6 +114,7 @@ def my_roc_curve(dataloader, model, classes, device):
 
 def plot_roc_curve(fpr, tpr, roc_auc, classes, labels, model_name):
 	plt.figure()
+	plt.rcParams.update({'font.size': 15, 'legend.fontsize': 10})
 	lw = 2
 	plt.plot(fpr["micro"], tpr["micro"],
 			 label='mikro średnia(area = {0:0.2f})'
