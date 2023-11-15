@@ -16,8 +16,8 @@ from os.path import join
 
 
 def main():
-	lr = 1e-3
-	epochs = 120
+	lr = 1e-2
+	epochs = 40
 	batch_size = 128
 	loss_fn = nn.CrossEntropyLoss()
 	metric = cohen_kappa
@@ -34,8 +34,8 @@ def main():
 
 	# model = DLA.SimpleSeq().to(device)
 	# model = DLA.SimpleResNet().to(device)
-	model = DLA.ResNet18().to(device)
-	# model = DLA.DLA_manual().to(device)
+	# model = DLA.ResNet18().to(device)
+	model = DLA.DLA_manual().to(device)
 
 
 	optimizer = torch.optim.Adam(model.parameters(),lr)

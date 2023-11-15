@@ -24,24 +24,24 @@ def main():
 
 
 
-	# plot_by('batch', m_idx = 0, lr_idx = 0, col = cols[0])
+	# plot_by('batch', m_idx = 0, lr_idx = 0, col = cols[2])
 	# plt.xlabel('epoki')
 	# plt.grid(True, 'both', 'both')
 
 
 
 
-	var = 'model'
-	for b in range(4):
-		for rate in range(3):
-			plot_by(var, b_idx=b, m_idx=0, lr_idx=rate, col=cols[2])
-			plt.xlabel('epoki')
-			plt.grid(True, 'both', 'both')
-			plt.savefig(join(output_dir, f'ByModel {cols[2]} b{batch[b]} lr{lr[rate]}.png'))
-			plot_by(var, b_idx=b, m_idx=0, lr_idx=rate, col=cols[3])
-			plt.xlabel('epoki')
-			plt.grid(True, 'both', 'both')
-			plt.savefig(join(output_dir, f'ByModel {cols[3]} b{batch[b]} lr{lr[rate]}.png'))
+	# var = 'model'
+	# for b in range(4):
+	# 	for rate in range(3):
+	# 		plot_by(var, b_idx=b, m_idx=0, lr_idx=rate, col=cols[2])
+	# 		plt.xlabel('epoki')
+	# 		plt.grid(True, 'both', 'both')
+	# 		plt.savefig(join(output_dir, f'ByModel {cols[2]} b{batch[b]} lr{lr[rate]}.png'))
+	# 		plot_by(var, b_idx=b, m_idx=0, lr_idx=rate, col=cols[3])
+	# 		plt.xlabel('epoki')
+	# 		plt.grid(True, 'both', 'both')
+	# 		plt.savefig(join(output_dir, f'ByModel {cols[3]} b{batch[b]} lr{lr[rate]}.png'))
 
 	var = 'batch'
 	for m in range(2):
@@ -55,17 +55,17 @@ def main():
 			plt.grid(True, 'both', 'both')
 			plt.savefig(join(output_dir, f'ByBatch {cols[3]} m{model[m]} lr{lr[rate]}.png'))
 
-	var = 'lr'
-	for b in range(4):
-		for m in range(2):
-			plot_by(var, b_idx=b, m_idx=m, lr_idx=0, col=cols[2])
-			plt.xlabel('epoki')
-			plt.grid(True, 'both', 'both')
-			plt.savefig(join(output_dir, f'ByLR {cols[2]} m{model[m]} b{batch[b]}.png'))
-			plot_by(var, b_idx=b, m_idx=m, lr_idx=0, col=cols[3])
-			plt.xlabel('epoki')
-			plt.grid(True, 'both', 'both')
-			plt.savefig(join(output_dir, f'ByLR {cols[3]} m{model[m]} b{batch[b]}.png'))
+	# var = 'lr'
+	# for b in range(4):
+	# 	for m in range(2):
+	# 		plot_by(var, b_idx=b, m_idx=m, lr_idx=0, col=cols[2])
+	# 		plt.xlabel('epoki')
+	# 		plt.grid(True, 'both', 'both')
+	# 		plt.savefig(join(output_dir, f'ByLR {cols[2]} m{model[m]} b{batch[b]}.png'))
+	# 		plot_by(var, b_idx=b, m_idx=m, lr_idx=0, col=cols[3])
+	# 		plt.xlabel('epoki')
+	# 		plt.grid(True, 'both', 'both')
+	# 		plt.savefig(join(output_dir, f'ByLR {cols[3]} m{model[m]} b{batch[b]}.png'))
 	
 
 
